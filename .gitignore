@@ -1,0 +1,8 @@
+# Ignore credentials and sensitive files
+credentials.json
+__pycache__/
+flask_session/
+instance/
+.env
+*.pyc
+.DS_Store

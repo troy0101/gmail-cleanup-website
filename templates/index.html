@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gmail Web Cleaner</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .tab-content { margin-top: 2em; }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <h2>Gmail Web Cleaner</h2>
+    {% if not authorized %}
+        <a href="/login" class="btn btn-primary">Sign in with Google</a>
+    {% else %}
+        <a href="/logout" class="btn btn-secondary float-end">Logout</a>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="domains-tab" data-bs-toggle="tab" data-bs-target="#domains" type="button" role="tab">Top Domains</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="clean-tab" data-bs-toggle="tab" data-bs-target="#clean" type="button" role="tab">Delete/Archive</button>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="domains" role="tabpanel">
+                <h4 class="mt-3">Top Sender Domains (Past Year)</h4>
+                <button class="btn btn-outline-primary mb-2" onclick="loadDomains()">Refresh</button>
+                <div id="domains-table"></div>
+            </div>
+            <div class="tab-pane fade" id="clean" role="tabpanel">
+                <h4 class="mt-3">Delete or Archive by Domain</h4>
+                <form id="clean-form">
+                    <div class="mb-2">
+                        <label>Domains (comma separated):</label>
+                        <input type="text" class="form-control" id="domains-input">
+                    </div>
+                    <div class="mb-2">
+                        <label>Start Date (YYYY/MM/DD):</label>
+                        <input type="text" class="form-control" id="after-input" value="2024/01/01">
+                    </div>
+                    <div class="mb-2">
+                        <label>End Date (YYYY/MM/DD):</label>
+                        <input type="text" class="form-control" id="before-input" value="2024/12/31">
+                    </div>
+                    <div class="mb-2">
+                        <label>Action:</label>
+                        <select class="form-select" id="action-input">
+                            <option value="trash">Delete (Trash)</option>
+                            <option value="archive">Archive</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Run</button>
+                </form>
+                <div class="mt-3" id="clean-status"></div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function loadDomains() {
+    document.getElementById('domains-table').innerHTML = 'Loading...';
+    fetch('/api/top-domains')
+        .then(r => r.json())
+        .then(data => {
+            let html = '<table class="table table-sm"><thead><tr><th>Domain</th><th>Count</th></tr></thead><tbody>';
+            for (let [domain, count] of data) {
+                html += `<tr><td>${domain}</td><td>${count}</td></tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('domains-table').innerHTML = html;
+        });
+}
+document.getElementById('clean-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    let domains = document.getElementById('domains-input').value.split(',').map(s => s.trim()).filter(Boolean);
+    let after = document.getElementById('after-input').value;
+    let before = document.getElementById('before-input').value;
+    let action = document.getElementById('action-input').value;
+    document.getElementById('clean-status').innerHTML = 'Running...';
+    fetch('/api/clean', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({domains, after, before, action})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('clean-status').innerHTML = `Done! ${data.total} emails processed.`;
+    });
+});
+</script>
+</body>
+</html>
