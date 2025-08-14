@@ -6,8 +6,11 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from datetime import datetime, timedelta
+ 
 import csv
 from collections import Counter
+ 
+ 
 
 app = Flask("Gmail Cleanup")
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'devkey')
@@ -17,13 +20,16 @@ Session(app)
 # Google OAuth2 setup
 CLIENT_SECRETS_FILE = "credentials.json"
 SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
-# Use localhost for REDIRECT_URI by default, fallback to Cloud Run for deployment
+
 REDIRECT_URI = os.environ.get('OAUTH_REDIRECT_URI', 'http://localhost:5000/oauth2callback')
 
 # Health check route for Cloud Run
 @app.route('/healthz')
 def healthz():
     return "ok", 200
+
+REDIRECT_URI = "http://localhost:5000/oauth2callback"
+
 
 @app.route('/')
 def index():
@@ -143,6 +149,7 @@ def api_clean():
             if not next_page_token:
                 break
     return jsonify({'status': 'done', 'total': total})
+
 
 # For Gunicorn, expose 'app' at module level
 # For local dev, run Flask directly
@@ -315,3 +322,9 @@ def api_delete_top_domains():
     service = build('gmail', 'v1', credentials=creds)
     result = delete_top_domains(service, top_n, before, csv_file)
     return jsonify(result)
+
+# For Gunicorn, expose 'app' at module level
+# For local dev, run Flask directly
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port, debug=True)
