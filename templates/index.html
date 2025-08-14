@@ -1,119 +1,98 @@
-<<<<<<< HEAD
-
-{% extends 'base.html' %}
-{% block title %}Gmail Cleanup Web App{% endblock %}
-{% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
-{% endblock %}
-{% block content %}
-    <h1>Gmail Cleanup Web App</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Gmail Web Cleaner</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .tab-content { margin-top: 2em; }
+    </style>
+</head>
+<body>
+<div class="container mt-4">
+    <h2>Gmail Web Cleaner</h2>
     {% if not authorized %}
-        <div class="alert alert-warning">Sign in with Google to enable actions.</div>
-        <a href="/login"><button class="btn mb-3">Sign in with Google</button></a>
+        <a href="/login" class="btn btn-primary">Sign in with Google</a>
     {% else %}
-        <p>Welcome! You are authorized.</p>
+        <a href="/logout" class="btn btn-secondary float-end">Logout</a>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="domains-tab" data-bs-toggle="tab" data-bs-target="#domains" type="button" role="tab">Top Domains</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="clean-tab" data-bs-toggle="tab" data-bs-target="#clean" type="button" role="tab">Delete/Archive</button>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="domains" role="tabpanel">
+                <h4 class="mt-3">Top Sender Domains (Past Year)</h4>
+                <button class="btn btn-outline-primary mb-2" onclick="loadDomains()">Refresh</button>
+                <div id="domains-table"></div>
+            </div>
+            <div class="tab-pane fade" id="clean" role="tabpanel">
+                <h4 class="mt-3">Delete or Archive by Domain</h4>
+                <form id="clean-form">
+                    <div class="mb-2">
+                        <label>Domains (comma separated):</label>
+                        <input type="text" class="form-control" id="domains-input">
+                    </div>
+                    <div class="mb-2">
+                        <label>Start Date (YYYY/MM/DD):</label>
+                        <input type="text" class="form-control" id="after-input" value="2024/01/01">
+                    </div>
+                    <div class="mb-2">
+                        <label>End Date (YYYY/MM/DD):</label>
+                        <input type="text" class="form-control" id="before-input" value="2024/12/31">
+                    </div>
+                    <div class="mb-2">
+                        <label>Action:</label>
+                        <select class="form-select" id="action-input">
+                            <option value="trash">Delete (Trash)</option>
+                            <option value="archive">Archive</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Run</button>
+                </form>
+                <div class="mt-3" id="clean-status"></div>
+            </div>
+        </div>
     {% endif %}
-    <ul class="nav nav-tabs" id="mainTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="top-tab" data-bs-toggle="tab" data-bs-target="#top" type="button" role="tab">Top Domains</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="delete-tab" data-bs-toggle="tab" data-bs-target="#delete" type="button" role="tab">Delete by Domain</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="deleteall-tab" data-bs-toggle="tab" data-bs-target="#deleteall" type="button" role="tab">Delete All</button>
-        </li>
-    </ul>
-    <div class="tab-content mt-3">
-        <div class="tab-pane fade show active" id="top" role="tabpanel">
-            <h4>Top 10 Sender Domains</h4>
-            {% if authorized %}
-                <button class="btn btn-outline-primary mb-2" onclick="loadTopDomains()">Refresh</button>
-            {% else %}
-                <button class="btn btn-outline-primary mb-2" onclick="alert('Sign in to use this feature.')" disabled>Refresh</button>
-            {% endif %}
-            <div id="top-domains-table">{% if not authorized %}<div class='text-muted'>Sign in to view your top domains.</div>{% endif %}</div>
-        </div>
-        <div class="tab-pane fade" id="delete" role="tabpanel">
-            <h4>Delete by Domain</h4>
-            <form id="delete-form">
-                <label>Domains (comma separated):</label>
-                <input type="text" class="form-control mb-2" id="domains-input" {% if not authorized %}disabled{% endif %}>
-                <label>Start Date (YYYY/MM/DD):</label>
-                <input type="text" class="form-control mb-2" id="after-input" value="2024/01/01" {% if not authorized %}disabled{% endif %}>
-                <label>End Date (YYYY/MM/DD):</label>
-                <input type="text" class="form-control mb-2" id="before-input" value="2024/12/31" {% if not authorized %}disabled{% endif %}>
-                <label>Action:</label>
-                <select class="form-select mb-2" id="action-input" {% if not authorized %}disabled{% endif %}>
-                    <option value="trash">Delete (Trash)</option>
-                    <option value="archive">Archive</option>
-                </select>
-                <button type="submit" class="btn btn-danger" {% if not authorized %}disabled{% endif %}>Run</button>
-            </form>
-            <div class="mt-3" id="delete-status">{% if not authorized %}<div class='text-muted'>Sign in to enable deletion.</div>{% endif %}</div>
-        </div>
-        <div class="tab-pane fade" id="deleteall" role="tabpanel">
-            <h4 style="color:red;">Delete All Emails</h4>
-            <p style="color:red; font-weight:bold;">Warning: This will delete <u>ALL</u> emails in your Gmail account. This action cannot be undone!</p>
-            {% if authorized %}
-                <button class="btn btn-danger" onclick="deleteAllEmails()">Delete All Emails</button>
-            {% else %}
-                <button class="btn btn-danger" onclick="alert('Sign in to use this feature.')" disabled>Delete All Emails</button>
-            {% endif %}
-            <div class="mt-3" id="deleteall-status">{% if not authorized %}<div class='text-muted'>Sign in to enable this action.</div>{% endif %}</div>
-        </div>
-    </div>
-{% endblock %}
-{% block scripts %}
-    <script src="{{ url_for('static', filename='custom.js') }}"></script>
-    <script>
-    function loadTopDomains() {
-        document.getElementById('top-domains-table').innerHTML = 'Loading...';
-        fetch('/api/top-domains')
-            .then(r => r.json())
-            .then(data => {
-                let html = '<table class="table table-sm"><thead><tr><th>Domain</th><th>Count</th></tr></thead><tbody>';
-                for (let i = 0; i < Math.min(10, data.length); i++) {
-                    let [domain, count] = data[i];
-                    html += `<tr><td>${domain}</td><td>${count}</td></tr>`;
-                }
-                html += '</tbody></table>';
-                document.getElementById('top-domains-table').innerHTML = html;
-            });
-    }
-    document.getElementById('delete-form')?.addEventListener('submit', function(e) {
-        e.preventDefault();
-        let domains = document.getElementById('domains-input').value.split(',').map(s => s.trim()).filter(Boolean);
-        let after = document.getElementById('after-input').value;
-        let before = document.getElementById('before-input').value;
-        let action = document.getElementById('action-input').value;
-        document.getElementById('delete-status').innerHTML = 'Running...';
-        fetch('/api/clean', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({domains, after, before, action})
-        })
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function loadDomains() {
+    document.getElementById('domains-table').innerHTML = 'Loading...';
+    fetch('/api/top-domains')
         .then(r => r.json())
         .then(data => {
-            document.getElementById('delete-status').innerHTML = `Done! ${data.total} emails processed.`;
+            let html = '<table class="table table-sm"><thead><tr><th>Domain</th><th>Count</th></tr></thead><tbody>';
+            for (let [domain, count] of data) {
+                html += `<tr><td>${domain}</td><td>${count}</td></tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('domains-table').innerHTML = html;
         });
+}
+document.getElementById('clean-form')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    let domains = document.getElementById('domains-input').value.split(',').map(s => s.trim()).filter(Boolean);
+    let after = document.getElementById('after-input').value;
+    let before = document.getElementById('before-input').value;
+    let action = document.getElementById('action-input').value;
+    document.getElementById('clean-status').innerHTML = 'Running...';
+    fetch('/api/clean', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({domains, after, before, action})
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById('clean-status').innerHTML = `Done! ${data.total} emails processed.`;
     });
-    function deleteAllEmails() {
-        if (!confirm('Are you sure you want to delete ALL emails? This cannot be undone!')) return;
-        document.getElementById('deleteall-status').innerHTML = 'Running...';
-        fetch('/api/clean', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({domains: ['*'], after: '2000/01/01', before: '2100/01/01', action: 'trash'})
-        })
-        .then(r => r.json())
-        .then(data => {
-            document.getElementById('deleteall-status').innerHTML = `Done! ${data.total} emails deleted.`;
-        });
-    }
-    </script>
-{% endblock %}
-=======
+});
+</script>
+</body>
+</html>
 <!DOCTYPE html>
 <html lang="en">
 <head>

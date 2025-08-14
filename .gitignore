@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-__pycache__/
-*.pyc
-=======
+
 # Ignore credentials and sensitive files
 credentials.json
 __pycache__/
@@ -10,4 +7,3 @@ instance/
 .env
 *.pyc
 .DS_Store
->>>>>>> 5fc641b7be614b0abaa5b13db2a00c32661a44e0
