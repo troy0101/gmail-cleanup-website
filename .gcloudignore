@@ -1,0 +1,16 @@
+# This file specifies files that are *not* uploaded to Google Cloud Platform when you run 'gcloud app deploy'.
+# For more information, run 'gcloud topic gcloudignore'.
+
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+ENV/
+instance/
+.vscode/
+credentials.json
+.env
